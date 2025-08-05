@@ -1,4 +1,4 @@
-# 📝 note-to-json-demo
+# 📝 Note-to-json-demo 📁
 
 > Markdown memory logs → structured `.json` with live file watching 🧠
 
@@ -133,3 +133,9 @@ Brief summary of the entry.
 ## 📜 License
 
 MIT — free to use, modify, and extend.
+
+---
+### 🔄 Related Work
+* **Legacy-AMA (v1, archived)** – full pipeline prototype  
+* **AMA v2 (private, in progress)** – orchestration, GPU router, RAG
+
