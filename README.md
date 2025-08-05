@@ -1,4 +1,4 @@
-# 📝 note-to-json-demo
+# 📝 Note-to-json-demo 📁
 
 [![CI](https://github.com/Mugiwara555343/note-to-json-demo/actions/workflows/python-ci.yml/badge.svg)](https://github.com/Mugiwara555343/note-to-json-demo/actions/workflows/python-ci.yml)
 
@@ -162,3 +162,9 @@ pytest -q
 ## 📜 License
 
 MIT — free to use, modify, and extend.
+
+---
+### 🔄 Related Work
+* **Legacy-AMA (v1, archived)** – full pipeline prototype  
+* **AMA v2 (private, in progress)** – orchestration, GPU router, RAG
+
