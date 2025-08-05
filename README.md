@@ -1,5 +1,7 @@
 # 📝 note-to-json-demo
 
+[![CI](https://github.com/Mugiwara555343/note-to-json-demo/actions/workflows/python-ci.yml/badge.svg)](https://github.com/Mugiwara555343/note-to-json-demo/actions/workflows/python-ci.yml)
+
 > Markdown memory logs → structured `.json` with live file watching 🧠
 
 This is a standalone demo of the **Markdown-to-JSON memory parser** and **file change watcher** used in the AI Memory Architecture project. It converts `.md` logs into clean `.parsed.json` objects with metadata, summaries, and core reflections.
@@ -23,6 +25,8 @@ You can:
 | `demo_entries/`     | Folder with 5 sample logs for testing        |
 | `watch_config.json` | Declares which folders the watcher monitors  |
 | `requirements.txt`  | Installs `watchdog` and `jsonschema`         |
+| `requirements-dev.txt` | Development dependencies (pytest)           |
+| `tests/`           | Test suite with automated CI                 |
 
 ### 🧪 Demo Entries
 
@@ -119,6 +123,31 @@ Brief summary of the entry.
 - Second reflection point
 - Third reflection point
 ```
+
+## 🧪 Testing & CI
+
+The project includes automated testing and continuous integration:
+
+### Running Tests Locally
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Run tests
+pytest -q
+```
+
+### CI/CD Pipeline
+- **GitHub Actions** automatically runs tests on every push and pull request
+- **CI Badge** shows current build status at the top of this README
+- **Test Coverage** includes parser validation, metadata extraction, and schema compliance
+
+### Test Structure
+- `tests/test_parser.py` - Core parser functionality tests
+- `tests/fixtures/sample.md` - Test markdown fixture
+- Validates JSON schema, required fields, metadata extraction, and content parsing
+
+---
 
 ## 📌 Notes
 
