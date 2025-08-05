@@ -1,7 +1,8 @@
 # 📝 Note-to-json-demo 📁
 
 [![CI](https://github.com/Mugiwara555343/note-to-json-demo/actions/workflows/python-ci.yml/badge.svg)](https://github.com/Mugiwara555343/note-to-json-demo/actions/workflows/python-ci.yml)
-
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 > Markdown memory logs → structured `.json` with live file watching 🧠
 
 This is a standalone demo of the **Markdown-to-JSON memory parser** and **file change watcher** used in the AI Memory Architecture project. It converts `.md` logs into clean `.parsed.json` objects with metadata, summaries, and core reflections.
