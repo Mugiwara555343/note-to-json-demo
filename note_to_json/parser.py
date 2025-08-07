@@ -47,7 +47,7 @@ def parse_file(md_path: Path) -> dict:
     Returns:
         dict: Parsed data with metadata, content, and reflections
     """
-    text = md_path.read_text(encoding="utf-8", errors="replace")
+    text = md_path.read_text(encoding="utf-8-sig", errors="replace")
     lines = text.splitlines()
 
     raw_text   = text.strip()
