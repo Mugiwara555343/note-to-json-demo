@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "note-to-json"
+version = "0.1.0"
+description = "Convert markdown memory logs to structured JSON"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Note to JSON Team"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "jsonschema>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.scripts]
+note2json = "note_to_json.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Mugiwara555343/note-to-json-demo"
+Repository = "https://github.com/Mugiwara555343/note-to-json-demo"
+Issues = "https://github.com/Mugiwara555343/note-to-json-demo/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["note_to_json*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')"
+]
