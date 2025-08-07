@@ -1,6 +1,7 @@
 # 📝 Note-to-json-demo 📁
 
-[![CI](https://github.com/Mugiwara555343/note-to-json-demo/actions/workflows/python-ci.yml/badge.svg)](https://github.com/Mugiwara555343/note-to-json-demo/actions/workflows/python-ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/Mugiwara555343/note-to-json-demo/python-ci.yml?branch=main)](#)
+[![Release](https://img.shields.io/github/v/tag/Mugiwara555343/note-to-json-demo)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 > Convert markdown notes to structured JSON offline in seconds.
@@ -17,8 +18,15 @@ You can:
 ## 🚀 Quickstart
 
 ```bash
-pip install git+https://github.com/Mugiwara555343/note-to-json-demo@cli-release
-note2json example_logs/sample.md
+pip install "git+https://github.com/Mugiwara555343/note-to-json-demo@v0.1.1"
+
+# macOS/Linux:
+printf "# Demo note\nFelt heavy this morning..." > demo.md
+
+# Windows (PowerShell):
+Set-Content -Encoding UTF8 demo.md "# Demo note`nFelt heavy this morning..."
+
+note2json demo.md -o out.json
 ```
 
 ---
@@ -85,9 +93,9 @@ note2json input.md -o output.json
 note2json *.md
 ```
 
-**Parse demo entries:**
+**Parse multiple files:**
 ```bash
-note2json demo_entries/*.md
+note2json *.md
 ```
 
 ### 4. Use as a Python Package
@@ -108,7 +116,7 @@ print(data["summary"])
 python memory_watcher.py
 ```
 
-Now edit any `.md` file in the `demo_entries/` folder (or add new ones).
+Now edit any `.md` file in the current folder (or add new ones).
 
 ✅ On save, the watcher re-runs the parser and updates/creates the corresponding `.parsed.json`.
 
