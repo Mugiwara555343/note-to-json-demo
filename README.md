@@ -3,7 +3,7 @@
 [![CI](https://github.com/Mugiwara555343/note-to-json-demo/actions/workflows/python-ci.yml/badge.svg)](https://github.com/Mugiwara555343/note-to-json-demo/actions/workflows/python-ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
-> Markdown memory logs → structured `.json` with live file watching 🧠
+> Convert markdown notes to structured JSON offline in seconds.
 
 This is a standalone demo of the **Markdown-to-JSON memory parser** and **file change watcher** used in the AI Memory Architecture project. It converts `.md` logs into clean `.parsed.json` objects with metadata, summaries, and core reflections.
 
@@ -14,19 +14,26 @@ You can:
 
 ---
 
+## 🚀 Quickstart
+
+```bash
+pip install git+https://github.com/Mugiwara555343/note-to-json-demo@cli-release
+note2json example_logs/sample.md
+```
+
+---
+
 ## 📦 What's Inside
 
-| File                | Role                                         |
+| File/Directory      | Role                                         |
 |---------------------|----------------------------------------------|
-| `memory_parser.py`  | Parses `.md` files → `.parsed.json`          |
+| `note_to_json/`     | Main package directory                       |
+| `note_to_json/parser.py` | Core parsing logic                        |
+| `note_to_json/cli.py` | Command-line interface                    |
 | `memory_watcher.py` | Watches folder for `.md` edits, auto-parses  |
-| `run_demo.py`       | Manually parse all `.md` files in the folder |
-| `run_demo.bat`      | Windows batch file to run the demo            |
-| `start_watcher.bat` | Windows batch file to start the watcher       |
 | `demo_entries/`     | Folder with 5 sample logs for testing        |
 | `watch_config.json` | Declares which folders the watcher monitors  |
-| `requirements.txt`  | Installs `watchdog` and `jsonschema`         |
-| `requirements-dev.txt` | Development dependencies (pytest)           |
+| `pyproject.toml`    | Package configuration and dependencies       |
 | `tests/`           | Test suite with automated CI                 |
 
 ### 🧪 Demo Entries
@@ -44,43 +51,61 @@ The `demo_entries/` folder contains 5 sample markdown files showcasing different
 
 ### 1. Clone the Repository
 
+```bash
 git clone https://github.com/Mugiwara555343/note-to-json-demo.git
 cd note-to-json-demo
+```
 
----
+### 2. Install the Package
 
-### 2. Install Dependencies
-
-pip install -r requirements.txt
-
----
-
-### 3. Manual Parse (Run Once)
-
-**Option A: Command Line**
+**Option A: Install in Development Mode**
 ```bash
-python run_demo.py
+pip install -e .
 ```
 
-**Option B: Windows (Double-click)**
+**Option B: Install with Development Dependencies**
+```bash
+pip install -e ".[dev]"
 ```
-run_demo.bat
+
+### 3. Use the CLI
+
+**Parse a single file:**
+```bash
+note2json input.md
 ```
 
-✅ This will convert all `.md` files in the `demo_entries/` folder to `.parsed.json` files.
+**Parse with custom output:**
+```bash
+note2json input.md -o output.json
+```
 
----
+**Parse multiple files:**
+```bash
+note2json *.md
+```
 
-### 4. Enable Live Watching (Auto Mode)
+**Parse demo entries:**
+```bash
+note2json demo_entries/*.md
+```
 
-**Option A: Command Line**
+### 4. Use as a Python Package
+
+```python
+from note_to_json import parse_file
+from pathlib import Path
+
+# Parse a markdown file
+data = parse_file(Path("input.md"))
+print(data["title"])
+print(data["summary"])
+```
+
+### 5. Enable Live Watching (Auto Mode)
+
 ```bash
 python memory_watcher.py
-```
-
-**Option B: Windows (Double-click)**
-```
-start_watcher.bat
 ```
 
 Now edit any `.md` file in the `demo_entries/` folder (or add new ones).
@@ -132,7 +157,7 @@ The project includes automated testing and continuous integration:
 ### Running Tests Locally
 ```bash
 # Install development dependencies
-pip install -r requirements-dev.txt
+pip install -e ".[dev]"
 
 # Run tests
 pytest -q

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-memory_parser.py (Standalone Demo Version)
+note_to_json.parser
 
 Parses markdown logs into JSON with a strict schema:
 - YAML frontmatter: title, tags
@@ -12,10 +12,6 @@ import json
 from pathlib import Path
 from datetime import datetime
 from jsonschema import validate, ValidationError
-
-# === CONFIG ===
-MEMORY_DIR = Path(__file__).parent
-OUTPUT_DIR = MEMORY_DIR
 
 # === SCHEMA ===
 SCHEMA = {
@@ -41,7 +37,16 @@ def validate_parsed(data: dict):
     validate(instance=data, schema=SCHEMA)
 
 
-def parse_md_file(md_path: Path) -> dict:
+def parse_file(md_path: Path) -> dict:
+    """
+    Parse a markdown file into structured JSON.
+    
+    Args:
+        md_path: Path to the markdown file
+        
+    Returns:
+        dict: Parsed data with metadata, content, and reflections
+    """
     text = md_path.read_text(encoding="utf-8", errors="replace")
     lines = text.splitlines()
 
@@ -113,15 +118,7 @@ def parse_md_file(md_path: Path) -> dict:
     return parsed
 
 
-# === MAIN ===
-if __name__ == "__main__":
-    for md in MEMORY_DIR.glob("*.md"):
-        out = OUTPUT_DIR / f"{md.stem}.parsed.json"
-        try:
-            data = parse_md_file(md)
-            out.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-            print(f"[OK] Parsed: {md.name} → {out.name}")
-        except ValidationError as ve:
-            print(f"[SCHEMA ERR] {md.name}: {ve.message}")
-        except Exception as e:
-            print(f"[FAIL] {md.name}: {e}")
+# Backward compatibility
+def parse_md_file(md_path: Path) -> dict:
+    """Alias for parse_file for backward compatibility"""
+    return parse_file(md_path)
