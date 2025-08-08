@@ -18,7 +18,7 @@ You can:
 ## 🚀 Quickstart
 
 ```bash
-pip install "git+https://github.com/Mugiwara555343/note-to-json-demo@v0.1.1"
+pip install "git+https://github.com/Mugiwara555343/note-to-json-demo@v0.1.4"
 
 # macOS/Linux:
 printf "# Demo note\nFelt heavy this morning..." > demo.md
@@ -26,7 +26,17 @@ printf "# Demo note\nFelt heavy this morning..." > demo.md
 # Windows (PowerShell):
 Set-Content -Encoding UTF8 demo.md "# Demo note`nFelt heavy this morning..."
 
+# Basic parsing
 note2json demo.md -o out.json
+
+# Print JSON to STDOUT
+note2json demo.md --stdout
+
+# Pretty-print JSON to STDOUT
+note2json demo.md --stdout --pretty
+
+# Pipe to jq for filtering
+note2json demo.md --stdout | jq '.title'
 ```
 
 ---
