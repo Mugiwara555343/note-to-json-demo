@@ -18,7 +18,7 @@ You can:
 ## 🚀 Quickstart
 
 ```bash
-pip install "git+https://github.com/Mugiwara555343/note-to-json-demo@v0.1.4"
+pip install "git+https://github.com/Mugiwara555343/note-to-json-demo@v0.1.6"
 
 # macOS/Linux:
 printf "# Demo note\nFelt heavy this morning..." > demo.md

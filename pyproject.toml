@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "note-to-json"
-version = "0.1.4"
+version = "0.1.6"
 description = "Convert markdown memory logs to structured JSON"
 readme = "README.md"
 license = {text = "MIT"}
