@@ -113,10 +113,13 @@ note2json input.md --stdout --pretty
 note2json input.md --stdout | jq '.title'
 ```
 
-**Parse multiple files:**
+**Parse multiple files with glob patterns:**
 ```bash
 note2json *.md
+note2json notes\**\*.md --stdout | jq
 ```
+
+**Note:** PowerShell often passes wildcards literally. This tool now expands glob patterns like `*.md` and `**/*.md` automatically.
 
 ### 4. Use as a Python Package
 
@@ -210,6 +213,11 @@ pytest -q
 - Watching behavior is debounced to avoid duplicate triggering
 - The parser extracts: title, date, tags, tone, summary, and reflections
 - All fields are optional except title, timestamp, raw_text, and plain_text
+
+### Exit Codes
+- **0**: Success - all files parsed successfully
+- **2**: Missing files - one or more input files don't exist or glob patterns matched zero files
+- **3**: Parsing errors - one or more files failed to parse
 
 ---
 
