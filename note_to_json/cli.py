@@ -21,6 +21,8 @@ def main():
 Examples:
   note2json input.md                    # Parse to input.parsed.json
   note2json input.md -o output.json    # Parse to custom output file
+  note2json input.md --stdout          # Print JSON to STDOUT
+  note2json input.md --stdout --pretty # Pretty-print JSON to STDOUT
   note2json *.md                       # Parse multiple files
         """
     )
@@ -36,7 +38,23 @@ Examples:
         help="Output file path (default: input.parsed.json)"
     )
     
+    parser.add_argument(
+        "--stdout",
+        action="store_true",
+        help="Print JSON to STDOUT instead of writing to file"
+    )
+    
+    parser.add_argument(
+        "--pretty",
+        action="store_true",
+        help="Pretty-print JSON with 2-space indentation"
+    )
+    
     args = parser.parse_args()
+    
+    # Handle conflict between --stdout and -o/--output
+    if args.stdout and args.output:
+        print("Warning: --stdout overrides -o/--output", file=sys.stderr)
     
     # Process each input file
     for input_path_str in args.input_file:
@@ -53,22 +71,32 @@ Examples:
             # Parse the file
             parsed_data = parse_file(input_path)
             
-            # Determine output path
-            if args.output:
-                if len(args.input_file) > 1:
-                    print(f"Error: --output can only be used with a single input file", file=sys.stderr)
-                    sys.exit(1)
-                output_path = Path(args.output)
+            # Determine JSON formatting
+            indent = 2 if args.pretty else None
+            
+            # Handle output
+            if args.stdout:
+                # Print to STDOUT
+                json.dump(parsed_data, sys.stdout, indent=indent, ensure_ascii=False)
+                print()  # Add newline after JSON
+                sys.exit(0)  # Exit after printing to STDOUT
             else:
-                output_path = input_path.with_suffix(".parsed.json")
-            
-            # Write output
-            output_path.write_text(
-                json.dumps(parsed_data, indent=2, ensure_ascii=False),
-                encoding="utf-8"
-            )
-            
-            print(f"✅ Parsed: {input_path.name} → {output_path.name}")
+                # Determine output path
+                if args.output:
+                    if len(args.input_file) > 1:
+                        print(f"Error: --output can only be used with a single input file", file=sys.stderr)
+                        sys.exit(1)
+                    output_path = Path(args.output)
+                else:
+                    output_path = input_path.with_suffix(".parsed.json")
+                
+                # Write output
+                output_path.write_text(
+                    json.dumps(parsed_data, indent=indent, ensure_ascii=False),
+                    encoding="utf-8"
+                )
+                
+                print(f"✅ Parsed: {input_path.name} → {output_path.name}")
             
         except Exception as e:
             print(f"❌ Error parsing {input_path.name}: {e}", file=sys.stderr)

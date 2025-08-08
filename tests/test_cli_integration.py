@@ -3,6 +3,7 @@ import pytest
 import os
 from pathlib import Path
 import tempfile
+import json
 
 
 @pytest.mark.integration
@@ -48,3 +49,39 @@ def test_cli_integration():
         # Clean up the temporary file
         if tmp_json.exists():
             tmp_json.unlink()
+
+
+@pytest.mark.integration
+def test_cli_stdout_flag():
+    """Test that the --stdout flag works correctly"""
+    # Get a demo file to test with
+    demo_file = Path(__file__).parent.parent / "demo_entries" / "demo_entry.md"
+    
+    if not demo_file.exists():
+        pytest.skip("Demo file not found")
+    
+    # Run the CLI command with --stdout flag
+    env = os.environ.copy()
+    env['PYTHONIOENCODING'] = 'utf-8'
+    
+    result = subprocess.run(
+        ['note2json', str(demo_file), '--stdout'],
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        env=env
+    )
+    
+    # Assert the command succeeded with exit code 0
+    assert result.returncode == 0, f"CLI failed with return code {result.returncode}. stderr: {result.stderr}"
+    
+    # Assert STDOUT contains valid JSON
+    assert result.stdout.strip(), "STDOUT should not be empty"
+    
+    # Parse the JSON and verify it has the required fields
+    try:
+        data = json.loads(result.stdout.strip())
+        assert "title" in data, "JSON should contain 'title' field"
+        assert "timestamp" in data, "JSON should contain 'timestamp' field"
+    except json.JSONDecodeError as e:
+        pytest.fail(f"STDOUT should contain valid JSON: {e}")

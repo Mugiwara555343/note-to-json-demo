@@ -88,9 +88,19 @@ note2json input.md
 note2json input.md -o output.json
 ```
 
-**Parse multiple files:**
+**Print JSON to STDOUT:**
 ```bash
-note2json *.md
+note2json input.md --stdout
+```
+
+**Pretty-print JSON to STDOUT:**
+```bash
+note2json input.md --stdout --pretty
+```
+
+**Pipe to jq for filtering:**
+```bash
+note2json input.md --stdout | jq '.title'
 ```
 
 **Parse multiple files:**
