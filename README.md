@@ -18,7 +18,7 @@ You can:
 ## 🚀 Quickstart
 
 ```bash
-pip install "git+https://github.com/Mugiwara555343/note-to-json-demo@v0.1.6"
+pip install note-to-json
 
 # macOS/Linux:
 printf "# Demo note\nFelt heavy this morning..." > demo.md
@@ -29,14 +29,14 @@ Set-Content -Encoding UTF8 demo.md "# Demo note`nFelt heavy this morning..."
 # Basic parsing
 note2json demo.md -o out.json
 
-# Print JSON to STDOUT
-note2json demo.md --stdout
+# Parse text file
+note2json note.txt --stdout | jq
 
-# Pretty-print JSON to STDOUT
-note2json demo.md --stdout --pretty
+# Pipe JSON (Windows)
+type data.json | note2json --stdin --input-format json --stdout | jq
 
-# Pipe to jq for filtering
-note2json demo.md --stdout | jq '.title'
+# Pipe JSON (macOS/Linux)
+cat data.json  | note2json --stdin --input-format json --stdout | jq
 ```
 
 ---
@@ -108,10 +108,7 @@ note2json input.md --stdout
 note2json input.md --stdout --pretty
 ```
 
-**Pipe to jq for filtering:**
-```bash
-note2json input.md --stdout | jq '.title'
-```
+**Pipe to jq for filtering:** see examples above.
 
 **Parse multiple files with glob patterns:**
 ```bash
@@ -119,7 +116,11 @@ note2json *.md
 note2json notes\**\*.md --stdout | jq
 ```
 
-**Note:** PowerShell often passes wildcards literally. This tool now expands glob patterns like `*.md` and `**/*.md` automatically.
+**Note:** PowerShell often passes wildcards literally. This tool expands glob patterns like `*.md` and `**/*.md` automatically.
+
+### Flags
+- `--stdin`: read from STDIN instead of files
+- `--input-format {auto,md,txt,json}`: control input parsing (default: `auto`)
 
 ### 4. Use as a Python Package
 
@@ -215,9 +216,9 @@ pytest -q
 - All fields are optional except title, timestamp, raw_text, and plain_text
 
 ### Exit Codes
-- **0**: Success - all files parsed successfully
-- **2**: Missing files - one or more input files don't exist or glob patterns matched zero files
-- **3**: Parsing errors - one or more files failed to parse
+- **0**: Success
+- **2**: Missing input (no stdin and no files, or glob mismatch)
+- **3**: Parse failure / JSON decode error
 
 ---
 

@@ -10,7 +10,7 @@ import glob
 import json
 import sys
 from pathlib import Path
-from .parser import parse_file
+from .parser import parse_file, read_input
 
 
 def expand_glob_patterns(patterns):
@@ -39,22 +39,28 @@ def expand_glob_patterns(patterns):
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(
-        description="Convert markdown files to structured JSON",
+        description="Convert markdown/text or JSON inputs to structured JSON",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   note2json input.md                    # Parse to input.parsed.json
-  note2json input.md -o output.json    # Parse to custom output file
-  note2json input.md --stdout          # Print JSON to STDOUT
-  note2json input.md --stdout --pretty # Pretty-print JSON to STDOUT
-  note2json *.md                       # Parse multiple files
+  note2json input.md -o output.json     # Parse to custom output file
+  note2json input.md --stdout           # Print JSON to STDOUT
+  note2json input.md --stdout --pretty  # Pretty-print JSON to STDOUT
+  note2json *.md                        # Parse multiple files
+
+  # Read from STDIN (Windows):
+  type data.json | note2json --stdin --input-format json --stdout
+
+  # Read from STDIN (macOS/Linux):
+  cat data.json | note2json --stdin --input-format json --stdout
         """
     )
     
     parser.add_argument(
         "input_file",
-        nargs="+",
-        help="Markdown file(s) to parse (supports glob patterns like *.md, **/*.md)"
+        nargs="*",
+        help="Input file(s) to parse (supports glob patterns like *.md, **/*.md)"
     )
     
     parser.add_argument(
@@ -73,6 +79,19 @@ Examples:
         action="store_true",
         help="Pretty-print JSON with 2-space indentation"
     )
+
+    parser.add_argument(
+        "--stdin",
+        action="store_true",
+        help="Read input from STDIN instead of files"
+    )
+
+    parser.add_argument(
+        "--input-format",
+        choices=["auto", "md", "txt", "json"],
+        default="auto",
+        help="Input format: auto-detect (default), md, txt, or json"
+    )
     
     args = parser.parse_args()
     
@@ -80,6 +99,38 @@ Examples:
     if args.stdout and args.output:
         print("Warning: --stdout overrides -o/--output", file=sys.stderr)
     
+    # If --stdin is provided, prefer it over file paths
+    if args.stdin:
+        if args.input_file:
+            print("Warning: --stdin provided; ignoring file paths", file=sys.stderr)
+        try:
+            # Read from STDIN (binary safe), BOM-safe decoding
+            raw_bytes = sys.stdin.buffer.read()
+            text = raw_bytes.decode("utf-8-sig", errors="replace")
+            parsed_data = read_input(text, args.input_format, filename_hint="stdin")
+        except Exception as e:
+            print(f"Error: Failed to parse STDIN", file=sys.stderr)
+            sys.exit(3)
+
+        indent = 2 if args.pretty else None
+        if args.stdout or not args.output:
+            json.dump(parsed_data, sys.stdout, indent=indent, ensure_ascii=False)
+            if not args.pretty:
+                print()
+        else:
+            output_path = Path(args.output)
+            output_path.write_text(
+                json.dumps(parsed_data, indent=indent, ensure_ascii=False),
+                encoding="utf-8"
+            )
+            print(f"✅ Parsed: STDIN → {output_path.name}")
+        sys.exit(0)
+
+    # No --stdin: need at least one file
+    if not args.input_file:
+        print("Error: No input provided. Use files or --stdin.", file=sys.stderr)
+        sys.exit(2)
+
     # Expand glob patterns
     input_files = expand_glob_patterns(args.input_file)
     
@@ -95,13 +146,12 @@ Examples:
         if not input_path.exists():
             missing_files.append(input_path)
             continue
-            
-        if not input_path.suffix.lower() == ".md":
-            print(f"Warning: File doesn't have .md extension: {input_path}", file=sys.stderr)
         
         try:
-            # Parse the file
-            parsed_data = parse_file(input_path)
+            # Read file and parse according to input format
+            text = input_path.read_text(encoding="utf-8-sig", errors="replace")
+            filename_hint = input_path.stem
+            parsed_data = read_input(text, args.input_format, filename_hint=filename_hint)
             successful_parses.append((input_path, parsed_data))
             
         except Exception as e:
