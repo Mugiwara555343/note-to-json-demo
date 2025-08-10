@@ -1,1 +1,1 @@
-# Tests package for note-to-json-demo 
+# Tests package for note2json 

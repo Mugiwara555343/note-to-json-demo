@@ -1,12 +1,14 @@
-# 📝 Note-to-json-demo 📁
+# 📝 Note2JSON 📁
 
-[![CI](https://img.shields.io/github/actions/workflow/status/Mugiwara555343/note-to-json-demo/python-ci.yml?branch=main)](#)
-[![Release](https://img.shields.io/github/v/tag/Mugiwara555343/note-to-json-demo)](#)
+[![CI](https://img.shields.io/github/actions/workflow/status/Mugiwara555343/note2json/python-ci.yml?branch=main)](#)
+[![Release](https://img.shields.io/github/v/tag/Mugiwara555343/note2json)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 > Convert markdown notes to structured JSON offline in seconds.
 
 This is a standalone demo of the **Markdown-to-JSON memory parser** and **file change watcher** used in the AI Memory Architecture project. It converts `.md` logs into clean `.parsed.json` objects with metadata, summaries, and core reflections.
+
+> **Note:** Renamed from note-to-json-demo; GitHub redirects preserved.
 
 You can:
 - 📝 Write or edit markdown memory entries
@@ -70,8 +72,8 @@ The `demo_entries/` folder contains 5 sample markdown files showcasing different
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Mugiwara555343/note-to-json-demo.git
-cd note-to-json-demo
+git clone https://github.com/Mugiwara555343/note2json.git
+cd note2json
 ```
 
 ### 2. Install the Package
@@ -226,4 +228,8 @@ MIT — free to use, modify, and extend.
 ### 🔄 Related Work
 * **Legacy-AMA (v1, archived)** – full pipeline prototype  
 * **AMA v2 (private, in progress)** – orchestration, GPU router, RAG
+
+---
+
+> **Note:** Renamed from note-to-json-demo; GitHub redirects preserved.
 

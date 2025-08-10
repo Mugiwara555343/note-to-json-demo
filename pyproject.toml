@@ -42,9 +42,9 @@ watch = [
 note2json = "note_to_json.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/Mugiwara555343/note-to-json-demo"
-Repository = "https://github.com/Mugiwara555343/note-to-json-demo"
-Issues = "https://github.com/Mugiwara555343/note-to-json-demo/issues"
+Homepage = "https://github.com/Mugiwara555343/note2json"
+Repository = "https://github.com/Mugiwara555343/note2json"
+Issues = "https://github.com/Mugiwara555343/note2json/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
