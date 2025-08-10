@@ -206,19 +206,15 @@ pytest -q
 - Validates JSON schema, required fields, metadata extraction, and content parsing
 
 ---
+## 🤝 Contributing
 
-## 📌 Notes
+Spotted a bug or want a feature? I’d love your help.
 
-- `.parsed.json` is stored in the same folder as the `.md` file
-- Files that fail schema validation will be skipped with a warning
-- Watching behavior is debounced to avoid duplicate triggering
-- The parser extracts: title, date, tags, tone, summary, and reflections
-- All fields are optional except title, timestamp, raw_text, and plain_text
+- **Read this first:** [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Bug report:** use the template → [New issue](../../issues/new?template=bug_report.yml)
+- **Feature request:** use the template → [New issue](../../issues/new?template=feature_request.yml)
+- **Pull requests:** follow the checklist in [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md)
 
-### Exit Codes
-- **0**: Success
-- **2**: Missing input (no stdin and no files, or glob mismatch)
-- **3**: Parse failure / JSON decode error
 
 ---
 
