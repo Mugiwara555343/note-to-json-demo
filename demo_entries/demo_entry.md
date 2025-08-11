@@ -1,6 +1,6 @@
 # Morning Reflection
-**Date:** 2025-07-17  
-**Tags:** #focus #emotion #ai  
+**Date:** 2025-07-17
+**Tags:** #focus #emotion #ai
 **Tone:** Reflective
 
 **Summary:**

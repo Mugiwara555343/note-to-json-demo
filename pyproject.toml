@@ -35,8 +35,8 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "pre-commit>=3.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
+    "black>=24",
+    "ruff>=0.5",
 ]
 watch = [
     "watchdog>=3.0.0",
