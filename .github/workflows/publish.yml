@@ -4,13 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: 'Publish target'
+        description: "Publish target"
         required: true
-        default: 'testpypi'
+        default: "testpypi"
         type: choice
-        options:
-          - testpypi
-          - pypi
+        options: [testpypi, pypi]
   release:
     types: [published]
 
@@ -22,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Install build tooling
         run: python -m pip install --upgrade pip build
       - name: Build sdist and wheel
@@ -33,14 +31,17 @@ jobs:
           name: dist
           path: dist/*
 
-  publish:
-    name: Publish package
+  publish-testpypi:
+    name: Publish to TestPyPI
     needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'testpypi' || (github.event_name == 'release' && github.event.release.prerelease) }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
-    environment: ${{ github.event.inputs.target || (github.event.release.prerelease && 'testpypi') || 'pypi' }}
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/note-to-json
     steps:
       - name: Download dist artifact
         uses: actions/download-artifact@v4
@@ -48,12 +49,29 @@ jobs:
           name: dist
           path: dist
       - name: Publish to TestPyPI
-        if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'testpypi') || (github.event_name == 'release' && github.event.release.prerelease) }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'pypi' || (github.event_name == 'release' && !github.event.release.prerelease) }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    environment:
+      name: pypi
+      url: https://pypi.org/p/note-to-json
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
       - name: Publish to PyPI
-        if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'pypi') || (github.event_name == 'release' && !github.event.release.prerelease) }}
         uses: pypa/gh-action-pypi-publish@release/v1
-
-
+        with:
+          packages-dir: dist/
