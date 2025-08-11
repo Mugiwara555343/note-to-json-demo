@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 import tempfile
 from note_to_json.parser import parse_file
+from ._helpers import normalize_text
 
 
 def test_bom_handling():
@@ -17,11 +18,13 @@ def test_bom_handling():
         
         # Assert BOM is stripped from raw_text
         assert not result["raw_text"].startswith("\ufeff"), "BOM not stripped from raw_text"
-        assert result["raw_text"].startswith("# Test Entry"), "raw_text doesn't start with expected content"
+        # Use normalize_text for cross-platform stability
+        assert normalize_text(result["raw_text"]).startswith("# Test Entry"), "raw_text doesn't start with expected content"
         
         # Assert BOM is stripped from plain_text
         assert not result["plain_text"].startswith("\ufeff"), "BOM not stripped from plain_text"
-        assert result["plain_text"].startswith("# Test Entry"), "plain_text doesn't start with expected content"
+        # Use normalize_text for cross-platform stability
+        assert normalize_text(result["plain_text"]).startswith("# Test Entry"), "plain_text doesn't start with expected content"
         
         # Verify other fields are parsed correctly
         assert result["title"] == "Test Entry"
