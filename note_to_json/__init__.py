@@ -1,10 +1,10 @@
-"""
-Note to JSON - A markdown to structured JSON parser
-"""
+# note_to_json/__init__.py
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
 
-__version__ = "0.1.0"
-__author__ = "Note to JSON Team"
+__all__ = ["__version__"]
 
-from .parser import parse_file
-
-__all__ = ["parse_file"]
+try:
+    __version__ = _pkg_version("note-to-json")
+except PackageNotFoundError:
+    # Running from a checkout / not installed
+    __version__ = "0+unknown"
