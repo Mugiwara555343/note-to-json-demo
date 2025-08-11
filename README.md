@@ -1,5 +1,11 @@
 # Note to JSON
 
+[![PyPI version](https://img.shields.io/pypi/v/note-to-json.svg)](https://pypi.org/project/note-to-json/)
+[![Python versions](https://img.shields.io/pypi/pyversions/note-to-json.svg)](https://pypi.org/project/note-to-json/)
+[![License](https://img.shields.io/pypi/l/note-to-json.svg)](LICENSE)
+[![CI](https://github.com/Mugiwara555343/note2json/actions/workflows/python-ci.yml/badge.svg)](https://github.com/Mugiwara555343/note2json/actions/workflows/python-ci.yml)
+[![Publish](https://github.com/Mugiwara555343/note2json/actions/workflows/publish.yml/badge.svg)](https://github.com/Mugiwara555343/note2json/actions/workflows/publish.yml)
+
 Convert Markdown or text files to structured JSON, offline.
 
 ## Features
