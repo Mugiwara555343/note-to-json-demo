@@ -72,7 +72,7 @@ def process_single_file(input_path: Path, input_format: str, no_emoji: bool = Fa
         parsed_data = read_input(text, input_format, filename_hint=filename_hint)
         return ProcessingResult(input_path, True, data=parsed_data)
         
-    except (ValueError, ParsingError) as e:
+    except ParsingError as e:
         # Handle parsing errors with clear messages and actionable advice
         if input_format == "json":
             error_msg = f"Invalid JSON input. If this is Markdown or text, use `--input-format md|txt`."
@@ -165,8 +165,6 @@ def process_stdin(input_format: str, no_emoji: bool = False) -> Tuple[Dict[str, 
         return parsed_data, None
     except (ValueError, ParsingError) as e:
         return {}, str(e)
-    except Exception as e:
-        return {}, f"Failed to parse STDIN: {e}"
     except Exception as e:
         return {}, f"Failed to parse STDIN: {e}"
 

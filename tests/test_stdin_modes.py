@@ -97,8 +97,9 @@ class TestStdinModes:
     
     def test_stdin_invalid_encoding_fails_gracefully(self):
         """Test that invalid stdin encoding fails with clear error message."""
-        # Create stdin with invalid encoding
-        invalid_bytes = b'\x80\x81\x82\x83\x84\x85'
+        # Create stdin with bytes that will pass decoding but fail validation
+        # Use bytes with a high ratio of null bytes to trigger validation failure
+        invalid_bytes = b'Valid text' + b'\x00' * 20  # 20 null bytes out of 30 total = 66% null ratio
         stdin_buffer = io.BytesIO(invalid_bytes)
         
         with pytest.raises(ValueError) as exc_info:

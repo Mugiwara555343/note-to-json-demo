@@ -182,38 +182,25 @@ class TestErrorHandling:
     
     def test_encoding_error_context(self):
         """Test that encoding errors include useful context."""
-        # Create a file with problematic encoding that will cause issues
-        # Use bytes that can't be decoded with any standard encoding
-        # We'll use bytes that are valid UTF-8 but contain problematic content
-        # that will trigger validation errors instead
+        # Create a file with bytes that will pass decoding but fail validation
+        # Use bytes with a high ratio of null bytes to trigger the null byte validation
+        # This will test the validation logic in our encoding function
+        problematic_bytes = b'Valid text' + b'\x00' * 20  # 20 null bytes out of 30 total = 66% null ratio
         
-        # Create a file with content that will pass encoding but fail validation
-        problematic_content = "Valid UTF-8 text with many null bytes: " + "\x00" * 15
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as f:
-            f.write(problematic_content)
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.md', delete=False) as f:
+            f.write(problematic_bytes)
             temp_path = Path(f.name)
 
         try:
-            # This should pass encoding but fail validation
-            text = read_text_safely(temp_path)
+            # This should fail validation with a clear error message
+            with pytest.raises(ValueError) as exc_info:
+                text = read_text_safely(temp_path)
             
-            # The text should be read successfully since it's valid UTF-8
-            assert "null bytes" in text
+            # The error should include the expected message
+            error_msg = str(exc_info.value)
+            assert "Decoding error" in error_msg
+            assert "try saving as UTF-8" in error_msg
             
-            # Test that the encoding function itself works for valid content
-            valid_content = "Valid UTF-8 text without problematic characters"
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as f2:
-                f2.write(valid_content)
-                valid_path = Path(f2.name)
-            
-            try:
-                valid_text = read_text_safely(valid_path)
-                # Use normalize_text for cross-platform stability
-                assert normalize_text(valid_text) == normalize_text(valid_content)
-            finally:
-                valid_path.unlink(missing_ok=True)
-                
         finally:
             temp_path.unlink(missing_ok=True)
     

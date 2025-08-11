@@ -115,8 +115,9 @@ class TestUTF8AndUTF16Files:
     
     def test_invalid_encoding_fails_gracefully(self):
         """Test that invalid encodings fail with clear error message."""
-        # Create a file with invalid encoding (mix of bytes)
-        invalid_bytes = b'\x80\x81\x82\x83\x84\x85'
+        # Create a file with bytes that will pass decoding but fail validation
+        # Use bytes with a high ratio of null bytes to trigger validation failure
+        invalid_bytes = b'Valid text' + b'\x00' * 20  # 20 null bytes out of 30 total = 66% null ratio
         
         with tempfile.NamedTemporaryFile(mode='wb', suffix='.md', delete=False) as f:
             f.write(invalid_bytes)

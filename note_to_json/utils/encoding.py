@@ -7,7 +7,7 @@ various text encodings including UTF-8, UTF-8 BOM, UTF-16 LE/BE.
 
 from typing import Iterable
 
-PREFERRED_ENCODINGS: tuple[str, ...] = ("utf-8", "utf-8-sig", "utf-16-le", "utf-16-be", "utf-16")
+PREFERRED_ENCODINGS: tuple[str, ...] = ("utf-8", "utf-8-sig", "utf-16-le", "utf-16-be", "utf-16", "cp1252", "latin-1")
 
 def decode_bytes(data: bytes, encodings: Iterable[str] = PREFERRED_ENCODINGS) -> str:
     last_err = None
@@ -20,9 +20,10 @@ def decode_bytes(data: bytes, encodings: Iterable[str] = PREFERRED_ENCODINGS) ->
             
             # Validate the decoded result - if it contains too many null bytes, it's probably wrong
             # But be more lenient for UTF-16 encodings which naturally have many null bytes
-            null_ratio = decoded.count('\x00') / len(decoded)
-            if null_ratio > 0.1 and enc not in ('utf-16', 'utf-16-le', 'utf-16-be'):
-                continue  # Try next encoding
+            if len(decoded) > 0:  # Avoid division by zero
+                null_ratio = decoded.count('\x00') / len(decoded)
+                if null_ratio > 0.1 and enc not in ('utf-16', 'utf-16-le', 'utf-16-be'):
+                    continue  # Try next encoding
             
             # Additional validation: if this is a UTF-16 encoding, check if the result looks reasonable
             if enc in ('utf-16', 'utf-16-le', 'utf-16-be'):
