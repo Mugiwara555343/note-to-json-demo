@@ -14,7 +14,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import IO, Union, Optional, Dict, Any
 from jsonschema import validate, ValidationError
-from .utils.encoding import read_text_safely, read_stdin_safely, decode_bytes
+from .utils import read_text_safely, read_stdin_safely, decode_bytes
 
 # === SCHEMA ===
 SCHEMA = {

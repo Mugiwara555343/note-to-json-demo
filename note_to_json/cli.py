@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from typing import List, Tuple, Dict, Any, Optional
 from .parser import parse_file, read_input, ParsingError
-from .utils.encoding import read_text_safely, read_stdin_safely
+from .utils import read_text_safely, read_stdin_safely
 import time
 from datetime import datetime
 
