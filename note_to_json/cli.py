@@ -4,7 +4,7 @@ note_to_json.cli
 
 Command-line interface for the note-to-json parser.
 """
-
+from . import __version__
 import argparse
 import glob
 import json
