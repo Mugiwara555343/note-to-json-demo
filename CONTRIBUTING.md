@@ -43,9 +43,9 @@ echo {"a":1} | note2json --stdin --input-format auto --stdout
   ```
 
 ## Commits & PRs
-- Conventional messages (example):  
-  - `feat(cli): add --stdin`  
-  - `fix(parser): strip BOM on Windows`  
+- Conventional messages (example):
+  - `feat(cli): add --stdin`
+  - `fix(parser): strip BOM on Windows`
   - `docs(readme): add quickstart`
 - Small PRs with a short “what/why” and before/after examples are best.
 - Update README if behavior or flags change.

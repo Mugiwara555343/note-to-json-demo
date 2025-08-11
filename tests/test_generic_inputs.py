@@ -3,25 +3,26 @@ import sys
 import os
 import json
 from pathlib import Path
-import tempfile
 
 
 def run_cli(args, stdin_input=None):
     env = os.environ.copy()
-    env['PYTHONIOENCODING'] = 'utf-8'
+    env["PYTHONIOENCODING"] = "utf-8"
     return subprocess.run(
-        [sys.executable, '-m', 'note_to_json.cli', *args],
+        [sys.executable, "-m", "note_to_json.cli", *args],
         input=stdin_input,
         capture_output=True,
         text=True,
-        encoding='utf-8',
-        env=env
+        encoding="utf-8",
+        env=env,
     )
 
 
 def test_stdin_json_autodetect_normalizes():
     payload = '{"foo":1,"title":"x"}'
-    result = run_cli(['--stdin', '--input-format', 'auto', '--stdout'], stdin_input=payload)
+    result = run_cli(
+        ["--stdin", "--input-format", "auto", "--stdout"], stdin_input=payload
+    )
     assert result.returncode == 0, f"CLI failed: {result.stderr}"
     out = result.stdout.strip()
     assert out, "Expected JSON on stdout"
@@ -31,22 +32,24 @@ def test_stdin_json_autodetect_normalizes():
 
 
 def test_txt_file_parses_plain_text(tmp_path: Path):
-    note_path = tmp_path / 'note.txt'
-    note_path.write_text('just a raw note', encoding='utf-8')
-    result = run_cli([str(note_path), '--stdout'])
+    note_path = tmp_path / "note.txt"
+    note_path.write_text("just a raw note", encoding="utf-8")
+    result = run_cli([str(note_path), "--stdout"])
     assert result.returncode == 0, f"CLI failed: {result.stderr}"
     data = json.loads(result.stdout.strip())
-    assert 'title' in data
-    assert 'note' in data['title'].lower()
+    assert "title" in data
+    assert "note" in data["title"].lower()
 
 
 def test_stdin_wins_over_files(tmp_path: Path):
-    dummy = tmp_path / 'dummy.md'
-    dummy.write_text('# ignore me', encoding='utf-8')
+    dummy = tmp_path / "dummy.md"
+    dummy.write_text("# ignore me", encoding="utf-8")
     payload = '{"from":"stdin"}'
-    result = run_cli(['--stdin', '--input-format', 'auto', '--stdout', str(dummy)], stdin_input=payload)
+    result = run_cli(
+        ["--stdin", "--input-format", "auto", "--stdout", str(dummy)],
+        stdin_input=payload,
+    )
     assert result.returncode == 0
-    assert 'Warning: --stdin provided; ignoring file paths' in result.stderr
+    assert "Warning: --stdin provided; ignoring file paths" in result.stderr
     data = json.loads(result.stdout.strip())
-    assert data['raw_text'] == '{"from":"stdin"}'
-
+    assert data["raw_text"] == '{"from":"stdin"}'

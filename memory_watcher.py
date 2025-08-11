@@ -7,7 +7,6 @@ Watches current folder for changes to `.md` files
 → Creates `.parsed.json` in same folder
 """
 
-import sys
 import json
 import time
 import logging
@@ -19,8 +18,8 @@ from watchdog.events import FileSystemEventHandler
 
 # === LOCAL CONFIG ===
 PROJECT_ROOT = Path(__file__).parent
-MEMORY_DIR   = PROJECT_ROOT
-CONFIG_PATH  = PROJECT_ROOT / "watch_config.json"
+MEMORY_DIR = PROJECT_ROOT
+CONFIG_PATH = PROJECT_ROOT / "watch_config.json"
 
 # === LOAD WATCH CONFIG ===
 if CONFIG_PATH.exists():
@@ -37,17 +36,18 @@ else:
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger("MemoryWatcher")
 
 # === DEBOUNCE SETTINGS ===
 DEBOUNCE_DELAY = 0.8
-FILE_EXTS      = {".md"}
-last_hash      = {}  # path → hash
+FILE_EXTS = {".md"}
+last_hash = {}  # path → hash
 
 # === IMPORT PARSER ===
 from memory_parser import parse_md_file
+
 
 class DebouncedHandler(FileSystemEventHandler):
     def __init__(self):
@@ -88,10 +88,13 @@ class DebouncedHandler(FileSystemEventHandler):
         try:
             parsed = parse_md_file(path)
             out = path.with_suffix(".parsed.json")
-            out.write_text(json.dumps(parsed, indent=2, ensure_ascii=False), encoding="utf-8")
+            out.write_text(
+                json.dumps(parsed, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
             logger.info(f"✅ Parsed → {out.name}")
         except Exception as e:
             logger.error(f"❌ Error parsing {path.name}: {e}", exc_info=True)
+
 
 # === MAIN ===
 def main():
@@ -112,6 +115,7 @@ def main():
         observer.stop()
         logger.info("👋 Memory Watcher Stopped")
     observer.join()
+
 
 if __name__ == "__main__":
     main()
