@@ -1,235 +1,292 @@
-# 📝 Note2JSON 📁
+# Note to JSON
 
-[![CI](https://img.shields.io/github/actions/workflow/status/Mugiwara555343/note2json/python-ci.yml?branch=main)](#)
-[![Release](https://img.shields.io/github/v/tag/Mugiwara555343/note2json)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
-> Convert markdown notes to structured JSON offline in seconds.
+Convert Markdown or text files to structured JSON, offline.
 
-This is a standalone demo of the **Markdown-to-JSON memory parser** and **file change watcher** used in the AI Memory Architecture project. It converts `.md` logs into clean `.parsed.json` objects with metadata, summaries, and core reflections.
+## Features
 
-> **Note:** Renamed from note-to-json-demo; GitHub redirects preserved.
+- **Privacy-first**: All processing happens locally, no data sent to external services
+- **Flexible input**: Supports Markdown, plain text, and JSON files
+- **Automatic encoding detection**: Handles UTF-8, UTF-16, and other encodings
+- **Batch processing**: Process multiple files with glob patterns
+- **Resilient parsing**: Graceful handling of malformed inputs and encoding issues
+- **Progress reporting**: Detailed feedback for batch operations
+- **Error recovery**: Continue processing even when some files fail
 
-You can:
-- 📝 Write or edit markdown memory entries
-- ⚙️ Parse them into structured `.parsed.json` snapshots
-- 👁️ Enable live file watching (auto-parse on edit)
-
----
-
-## 🚀 Quickstart
+## Installation
 
 ```bash
 pip install note-to-json
-
-# macOS/Linux:
-printf "# Demo note\nFelt heavy this morning..." > demo.md
-
-# Windows (PowerShell):
-Set-Content -Encoding UTF8 demo.md "# Demo note`nFelt heavy this morning..."
-
-# Basic parsing
-note2json demo.md -o out.json
-
-# Parse text file
-note2json note.txt --stdout | jq
-
-# Pipe JSON (Windows)
-type data.json | note2json --stdin --input-format json --stdout | jq
-
-# Pipe JSON (macOS/Linux)
-cat data.json  | note2json --stdin --input-format json --stdout | jq
 ```
 
----
+## Quick Start
 
-## 📦 What's Inside
+```bash
+# Convert a single file
+note2json input.md
 
-| File/Directory      | Role                                         |
-|---------------------|----------------------------------------------|
-| `note_to_json/`     | Main package directory                       |
-| `note_to_json/parser.py` | Core parsing logic                        |
-| `note_to_json/cli.py` | Command-line interface                    |
-| `memory_watcher.py` | Watches folder for `.md` edits, auto-parses  |
-| `demo_entries/`     | Folder with 5 sample logs for testing        |
-| `watch_config.json` | Declares which folders the watcher monitors  |
-| `pyproject.toml`    | Package configuration and dependencies       |
-| `tests/`           | Test suite with automated CI                 |
+# Convert multiple files
+note2json *.md
 
-### 🧪 Demo Entries
+# Output to STDOUT
+note2json input.md --stdout
 
-The `demo_entries/` folder contains 5 sample markdown files showcasing different emotional tones:
-- `demo_entry.md` - Reflective morning entry
-- `creative_breakthrough.md` - Enthusiastic breakthrough moment
-- `frustration_moment.md` - Frustrated debugging session
-- `peaceful_morning.md` - Calm gratitude practice
-- `team_collaboration.md` - Energized team meeting
+# Pretty-print JSON
+note2json input.md --stdout --pretty
+```
 
----
+## CLI Usage
 
-## 🚀 How to Use
+### Basic Commands
 
-### 1. Clone the Repository
+```bash
+note2json [OPTIONS] INPUT_FILE(S)
+```
+
+### Options
+
+- `-o, --output PATH`: Specify output file path
+- `--stdout`: Print JSON to STDOUT instead of writing to file
+- `--pretty`: Pretty-print JSON with 2-space indentation
+- `--stdin`: Read input from STDIN instead of files
+- `--input-format {auto,md,txt,json}`: Specify input format (default: auto)
+- `--no-emoji`: Disable emoji in status output
+- `--continue-on-error`: Continue processing remaining files even if some fail
+- `--verbose`: Show detailed progress information
+- `--retry-failed`: Automatically retry failed files with different strategies
+
+### Input Formats
+
+- **auto** (default): Automatically detect format based on content
+- **md/txt**: Parse as Markdown/plain text
+- **json**: Parse as JSON (with schema validation)
+
+### Examples
+
+```bash
+# Parse to default output file
+note2json input.md                    # → input.parsed.json
+
+# Parse to custom output file
+note2json input.md -o output.json     # → output.json
+
+# Parse to STDOUT
+note2json input.md --stdout           # → prints to terminal
+
+# Pretty-print to STDOUT
+note2json input.md --stdout --pretty  # → formatted JSON
+
+# Process multiple files
+note2json *.md                        # → individual .parsed.json files
+
+# Continue on errors
+note2json *.md --continue-on-error    # → process all files, report failures
+
+# Retry failed files automatically
+note2json *.md --retry-failed         # → retry failed files with different strategies
+
+# Show progress
+note2json *.md --verbose              # → detailed progress information
+
+# Read from STDIN (Windows)
+type data.json | note2json --stdin --input-format json --stdout
+
+# Read from STDIN (macOS/Linux)
+cat data.json | note2json --stdin --input-format json --stdout
+```
+
+## Resilience Features
+
+### Error Handling
+
+The CLI provides robust error handling with clear, actionable error messages:
+
+- **Encoding issues**: Automatic fallback to multiple encoding detection methods
+- **Malformed inputs**: Graceful degradation with automatic validation fixes
+- **Batch processing**: Continue processing even when individual files fail
+- **Detailed reporting**: Comprehensive error summaries with categorization
+- **Actionable advice**: Specific suggestions for fixing common issues
+- **Retry strategies**: Automatic retry with different parsing approaches
+
+### Error Types
+
+- **Missing files**: Exit code 2
+- **Parsing errors**: Exit code 3
+- **Encoding errors**: Detailed information about attempted encodings
+- **Validation errors**: Automatic fixing of common schema issues
+- **Format mismatches**: Clear guidance on input format selection
+- **Retry failures**: Information when all retry strategies fail
+
+### Enhanced Error Messages
+
+Error messages now include specific, actionable advice:
+
+```bash
+# Example of enhanced error message with advice
+Error: Schema validation failed at 'title': 'None' is not of type 'string'
+💡 Advice: Add the missing required field 'title'
+```
+
+### Retry Logic
+
+Use `--retry-failed` to automatically attempt processing failed files with different strategies:
+
+```bash
+note2json *.md --retry-failed
+```
+
+The retry system will:
+1. **Format switching**: Try different input formats (txt, json, auto)
+2. **Raw text processing**: Fall back to basic text extraction
+3. **Schema relaxation**: Create minimal valid structures when possible
+4. **Detailed reporting**: Show which retry strategy succeeded
+
+### Continue on Error
+
+Use `--continue-on-error` to process all files even when some fail:
+
+```bash
+note2json *.md --continue-on-error
+```
+
+This will:
+- Process all files that can be parsed
+- Report failures with detailed error messages
+- Provide a summary of successful vs. failed files
+- Exit with appropriate error code
+
+### Enhanced Progress Reporting
+
+Use `--verbose` for detailed progress information with time estimation:
+
+```bash
+note2json *.md --verbose
+```
+
+Shows:
+- Current file being processed
+- Progress counter (e.g., [3/10])
+- Visual progress bar with percentage
+- Estimated time remaining (ETA)
+- Summary of results
+- Error breakdown by type
+- Troubleshooting tips for common issues
+
+## Output Schema
+
+The tool outputs structured JSON with the following schema:
+
+```json
+{
+  "title": "string",
+  "timestamp": "ISO 8601 date-time",
+  "raw_text": "string",
+  "plain_text": "string",
+  "tags": ["string"],
+  "headers": ["string"],
+  "date": "string (optional)",
+  "tone": "string (optional)",
+  "summary": "string (optional)",
+  "reflections": ["string (optional)"]
+}
+```
+
+## Input Format Support
+
+### Markdown/Text
+
+- **Headers**: Extracts `# Title` as headers
+- **Metadata**: Parses `**Date:**`, `**Tags:**`, `**Tone:**` fields
+- **Summary**: Extracts content between `**Summary:**` and `---`
+- **Reflections**: Extracts bullet points after `**Core Reflections:**`
+
+### JSON
+
+- **Schema validation**: Ensures output matches required schema
+- **Auto-normalization**: Converts arbitrary JSON to schema format
+- **Format detection**: Automatically identifies JSON vs. text content
+
+## Encoding Support
+
+- **UTF-8**: Standard encoding with BOM support
+- **UTF-16**: Little-endian and big-endian variants
+- **Fallback detection**: Uses chardet for automatic encoding detection
+- **Error handling**: Graceful degradation with detailed error reporting
+
+## Development
+
+### Installation
 
 ```bash
 git clone https://github.com/Mugiwara555343/note2json.git
 cd note2json
-```
-
-### 2. Install the Package
-
-**Option A: Install in Development Mode**
-```bash
 pip install -e .
 ```
 
-**Option B: Install with Development Dependencies**
-```bash
-pip install -e ".[dev]"
-```
-
-### 3. Use the CLI
-
-**Parse a single file:**
-```bash
-note2json input.md
-```
-
-**Parse with custom output:**
-```bash
-note2json input.md -o output.json
-```
-
-**Print JSON to STDOUT:**
-```bash
-note2json input.md --stdout
-```
-
-**Pretty-print JSON to STDOUT:**
-```bash
-note2json input.md --stdout --pretty
-```
-
-**Pipe to jq for filtering:** see examples above.
-
-**Parse multiple files with glob patterns:**
-```bash
-note2json *.md
-note2json notes\**\*.md --stdout | jq
-```
-
-**Note:** PowerShell often passes wildcards literally. This tool expands glob patterns like `*.md` and `**/*.md` automatically.
-
-### Flags
-- `--stdin`: read from STDIN instead of files
-- `--input-format {auto,md,txt,json}`: control input parsing (default: `auto`)
-
-### 4. Use as a Python Package
-
-```python
-from note_to_json import parse_file
-from pathlib import Path
-
-# Parse a markdown file
-data = parse_file(Path("input.md"))
-print(data["title"])
-print(data["summary"])
-```
-
-### 5. Enable Live Watching (Auto Mode)
+### Testing
 
 ```bash
-python memory_watcher.py
+# Run all tests
+pytest
+
+# Run integration tests only
+pytest -m integration
+
+# Run with coverage
+pytest --cov=note_to_json
 ```
 
-Now edit any `.md` file in the current folder (or add new ones).
+### Code Quality
 
-✅ On save, the watcher re-runs the parser and updates/creates the corresponding `.parsed.json`.
-
----
-
-## 🧪 Output Example
-
-After parsing, you’ll get:
-
-{
-  "title": "Morning Reflection",
-  "timestamp": "2025-07-17T20:18:21Z",
-  "summary": "Today I spent time refining the AI memory watcher...",
-  "tags": ["focus", "emotion", "ai"],
-  "reflections": [
-    "Resilience is built through iteration.",
-    "System design is emotional memory made technical."
-  ]
-}
-
----
-
-## 📝 Markdown Format
-
-Your `.md` files should follow this structure:
-
-```markdown
-# Title
-**Date:** YYYY-MM-DD  
-**Tags:** #tag1 #tag2 #tag3  
-**Tone:** Emotional tone
-
-**Summary:**
-Brief summary of the entry.
-
-**Core Reflections:**
-- First reflection point
-- Second reflection point
-- Third reflection point
-```
-
-## 🧪 Testing & CI
-
-The project includes automated testing and continuous integration:
-
-### Running Tests Locally
 ```bash
-# Install development dependencies
-pip install -e ".[dev]"
+# Format code
+black note_to_json/ tests/
 
-# Run tests
-pytest -q
+# Sort imports
+isort note_to_json/ tests/
+
+# Run pre-commit hooks
+pre-commit run --all-files
 ```
 
-### CI/CD Pipeline
-- **GitHub Actions** automatically runs tests on every push and pull request
-- **CI Badge** shows current build status at the top of this README
-- **Test Coverage** includes parser validation, metadata extraction, and schema compliance
+## Contributing
 
-### Test Structure
-- `tests/test_parser.py` - Core parser functionality tests
-- `tests/fixtures/sample.md` - Test markdown fixture
-- Validates JSON schema, required fields, metadata extraction, and content parsing
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
 
----
-## 🤝 Contributing
+## License
 
-Spotted a bug or want a feature? I’d love your help.
+MIT License - see [LICENSE](LICENSE) file for details.
 
-- **Read this first:** [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Bug report:** use the template → [New issue](../../issues/new?template=bug_report.yml)
-- **Feature request:** use the template → [New issue](../../issues/new?template=feature_request.yml)
-- **Pull requests:** follow the checklist in [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md)
+## Changelog
 
+### v0.2.2
 
----
+- **Resilience improvements**: Better error handling and recovery
+- **Continue on error**: Process remaining files even when some fail
+- **Progress reporting**: Detailed feedback for batch operations
+- **Enhanced encoding detection**: Fallback mechanisms and better error messages
+- **Validation fixes**: Automatic correction of common schema issues
+- **Error categorization**: Grouped error reporting for better analysis
 
-## 📜 License
+### v0.2.1
 
-MIT — free to use, modify, and extend.
+- Improved encoding detection
+- Better error messages
+- Enhanced JSON passthrough
 
----
-### 🔄 Related Work
-* **Legacy-AMA (v1, archived)** – full pipeline prototype  
-* **AMA v2 (private, in progress)** – orchestration, GPU router, RAG
+### v0.2.0
 
----
+- Added JSON input support
+- Improved encoding handling
+- Better error reporting
 
-> **Note:** Renamed from note-to-json-demo; GitHub redirects preserved.
+### v0.1.0
+
+- Initial release
+- Basic Markdown parsing
+- CLI interface
 

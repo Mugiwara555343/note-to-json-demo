@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "note-to-json"
-version = "0.2.0"
+version = "0.2.2"
 description = "Convert Markdown or text files to structured JSON, offline."
 readme = "README.md"
 license = {text = "MIT"}
@@ -27,12 +27,16 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "jsonschema>=4.0.0",
+    "chardet>=5.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pre-commit>=3.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
 ]
 watch = [
     "watchdog>=3.0.0",

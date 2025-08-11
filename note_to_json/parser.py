@@ -9,10 +9,12 @@ Parses markdown/text or JSON into a structured JSON schema. Supports:
 
 import io
 import json
+import os
 from pathlib import Path
 from datetime import datetime
-from typing import IO, Union, Optional
+from typing import IO, Union, Optional, Dict, Any
 from jsonschema import validate, ValidationError
+from .utils.encoding import read_text_safely, read_stdin_safely, decode_bytes
 
 # === SCHEMA ===
 SCHEMA = {
@@ -34,8 +36,121 @@ SCHEMA = {
 }
 
 
-def validate_parsed(data: dict):
-    validate(instance=data, schema=SCHEMA)
+class ParsingError(ValueError):
+    """Custom exception for parsing errors with context."""
+    
+    def __init__(self, message: str, error_type: str = "parsing_error", context: Optional[Dict[str, Any]] = None):
+        super().__init__(message)
+        self.error_type = error_type
+        self.context = context or {}
+
+
+def _now_iso() -> str:
+    """Get current timestamp in ISO format."""
+    return datetime.utcnow().isoformat() + "Z"
+
+
+def _normalize_from_json(obj, *, raw_text: str, filename_hint: str | None = None) -> dict:
+    # If it already matches our schema, return as-is
+    if isinstance(obj, dict) and {"title","timestamp","raw_text","plain_text","tags","headers","reflections"} <= set(obj.keys()):
+        return obj
+    # Otherwise wrap primitive/array into our schema
+    title = (filename_hint or "json").split('.')[0]
+    if not isinstance(obj, (dict, list, str, int, float, bool)) and obj is not None:
+        obj = str(obj)
+    plain = json.dumps(obj, ensure_ascii=False) if not isinstance(obj, str) else obj
+
+    # For objects, use the title field if present, otherwise use filename_hint
+    if isinstance(obj, dict) and "title" in obj:
+        title = str(obj["title"])
+    elif isinstance(obj, (list, dict)):
+        title = title
+    else:
+        # For primitives, use filename_hint as title, not the primitive value
+        title = title
+
+    # For objects, preserve tags if they exist and are valid
+    tags = []
+    if isinstance(obj, dict) and "tags" in obj and isinstance(obj["tags"], list):
+        # Normalize tags: strip hash prefixes and convert to strings
+        tags = []
+        for t in obj["tags"]:
+            if isinstance(t, (str, int, float, bool)):
+                if isinstance(t, bool):
+                    tag_str = "true" if t else "false"
+                else:
+                    tag_str = str(t)
+                # Strip hash prefix if present
+                if tag_str.startswith('#'):
+                    tag_str = tag_str[1:]
+                tags.append(tag_str)
+    
+    return {
+        "title": title,
+        "timestamp": _now_iso(),
+        "raw_text": raw_text,
+        "plain_text": plain,
+        "tags": tags,
+        "headers": [],
+        "reflections": [],
+    }
+
+
+def validate_parsed(data: dict) -> None:
+    """Validate parsed data against schema with detailed error reporting."""
+    try:
+        validate(instance=data, schema=SCHEMA)
+    except ValidationError as e:
+        # Provide more helpful error messages with actionable advice
+        field_path = " -> ".join(str(p) for p in e.path) if e.path else "root"
+        
+        # Categorize validation errors for better handling
+        if e.validator == "required":
+            error_type = "missing_required_field"
+            # Extract the field name from the error message safely
+            field_name = "required field"
+            if "'" in e.message:
+                parts = e.message.split("'")
+                if len(parts) >= 2:
+                    field_name = parts[1]
+            advice = f"Add the missing required field '{field_name}'"
+        elif e.validator == "type":
+            error_type = "wrong_field_type"
+            expected_type = e.validator_value
+            actual_value = type(e.instance).__name__
+            advice = f"Change '{field_path}' from {actual_value} to {expected_type}"
+        elif e.validator == "format":
+            error_type = "invalid_format"
+            advice = f"Ensure '{field_path}' follows the required format: {e.validator_value}"
+        else:
+            error_type = "validation_error"
+            advice = f"Check the value of '{field_path}' against the schema requirements"
+        
+        raise ParsingError(
+            f"Schema validation failed at '{field_path}': {e.message}",
+            error_type=error_type,
+            context={
+                "field": field_path, 
+                "value": e.instance, 
+                "schema_requirement": e.validator_value,
+                "advice": advice
+            }
+        )
+
+
+def sanitize_text(text: str, max_length: int = 10000) -> str:
+    """Sanitize text content to prevent issues."""
+    if not isinstance(text, str):
+        text = str(text)
+    
+    # Remove null bytes and other problematic characters
+    text = text.replace('\x00', '')
+    
+    # Truncate if too long
+    if len(text) > max_length:
+        text = text[:max_length] + "... [truncated]"
+    
+    return text
 
 
 def _parse_text(text: str, *, filename_hint: Optional[str] = None) -> dict:
@@ -48,175 +163,218 @@ def _parse_text(text: str, *, filename_hint: Optional[str] = None) -> dict:
         
     Returns:
         dict: Parsed data with metadata, content, and reflections
+        
+    Raises:
+        ParsingError: If parsing fails or validation fails
     """
-    lines = text.splitlines()
+    try:
+        # Sanitize input text
+        text = sanitize_text(text)
+        
+        if not text.strip():
+            raise ParsingError("Empty or whitespace-only input", error_type="empty_input")
+        
+        lines = text.splitlines()
 
-    raw_text   = text.strip()
-    plain_text = raw_text.replace("\n", " ")
-    title      = (filename_hint or "stdin")
-    tags, headers, reflections = [], [], []
-    date_str, tone_str, summary_text = None, None, None
-    in_summary = in_reflect = False
+        raw_text   = text.strip()
+        plain_text = raw_text.replace("\n", " ")
+        title      = (filename_hint or "stdin")
+        tags, headers, reflections = [], [], []
+        date_str, tone_str, summary_text = None, None, None
+        in_summary = in_reflect = False
 
-    for line in lines:
-        if line.startswith("# "):
-            h = line.lstrip("# ").strip()
-            headers.append(h)
-            # Use the first H1 as title
-            if title == (filename_hint or "stdin"):
-                title = h
-
-        if line.startswith("**Date:**"):
-            date_str = line.split("**Date:**", 1)[1].strip()
-        if line.startswith("**Tags:**"):
-            vals = line.split("**Tags:**", 1)[1].strip()
-            tags = [t.strip().lstrip("#") for t in vals.split() if t.startswith("#")]
-        if line.startswith("**Tone:**"):
-            tone_str = line.split("**Tone:**", 1)[1].strip()
-
-        if line.lower().startswith("**summary:**"):
-            in_summary = True
-            summary_text = ""
-            continue
-        if in_summary:
-            if line.strip() == "" or line.strip().startswith("---"):
-                in_summary = False
-            else:
-                summary_text += line.strip() + " "
-
-        if line.lower().startswith("**core reflections:**"):
-            in_reflect = True
-            continue
-        if in_reflect:
-            if not line.startswith("-"):
-                in_reflect = False
-            else:
-                reflections.append(line.lstrip("- ").strip())
-
-    # If no headers were found and we still have the default title,
-    # use the first non-empty line as a fallback title
-    if headers == [] and title == (filename_hint or "stdin"):
         for line in lines:
-            if line.strip():
-                title = line.strip()
-                break
+            line = line.rstrip('\r\n')  # Handle different line endings
+            
+            if line.startswith("# "):
+                h = line.lstrip("# ").strip()
+                if h:  # Only add non-empty headers
+                    headers.append(h)
+                    # Use the first H1 as title
+                    if title == (filename_hint or "stdin"):
+                        title = h
 
-    if date_str:
-        try:
-            dt = datetime.fromisoformat(date_str)
-            timestamp = dt.isoformat() + "Z"
-        except:
+            if line.startswith("**Date:**"):
+                date_str = line.split("**Date:**", 1)[1].strip()
+            if line.startswith("**Tags:**"):
+                vals = line.split("**Tags:**", 1)[1].strip()
+                tags = [t.strip().lstrip("#") for t in vals.split() if t.startswith("#")]
+            if line.startswith("**Tone:**"):
+                tone_str = line.split("**Tone:**", 1)[1].strip()
+
+            if line.lower().startswith("**summary:**"):
+                in_summary = True
+                summary_text = ""
+                continue
+            if in_summary:
+                if line.strip() == "" or line.strip().startswith("---"):
+                    in_summary = False
+                else:
+                    summary_text += line.strip() + " "
+
+            if line.lower().startswith("**core reflections:**"):
+                in_reflect = True
+                continue
+            if in_reflect:
+                if not line.startswith("-"):
+                    in_reflect = False
+                else:
+                    reflection = line.lstrip("- ").strip()
+                    if reflection:  # Only add non-empty reflections
+                        reflections.append(reflection)
+
+        # If no headers were found and we still have the default title,
+        # use the first non-empty line as a fallback title
+        if headers == [] and title == (filename_hint or "stdin"):
+            for line in lines:
+                if line.strip():
+                    title = line.strip()
+                    break
+
+        # Ensure title is not empty
+        if not title or title.strip() == "":
+            title = filename_hint or "untitled"
+
+        # Parse date with better error handling
+        if date_str:
+            try:
+                # Try various date formats
+                for fmt in ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]:
+                    try:
+                        dt = datetime.strptime(date_str, fmt)
+                        timestamp = dt.isoformat() + "Z"
+                        break
+                    except ValueError:
+                        continue
+                else:
+                    # If no format worked, use current time
+                    timestamp = datetime.utcnow().isoformat() + "Z"
+            except Exception:
+                timestamp = datetime.utcnow().isoformat() + "Z"
+        else:
             timestamp = datetime.utcnow().isoformat() + "Z"
-    else:
-        timestamp = datetime.utcnow().isoformat() + "Z"
 
-    parsed = {
-        "title":       title,
-        "timestamp":   timestamp,
-        "raw_text":    raw_text,
-        "plain_text":  plain_text,
-        "tags":        tags,
-        "headers":     headers,
-        "date":        date_str,
-        "tone":        tone_str,
-        "summary":     summary_text.strip() if summary_text else None,
-        "reflections": reflections,
-    }
-
-    parsed = {k: v for k, v in parsed.items() if v is not None}
-    validate_parsed(parsed)
-    return parsed
-
-
-def read_input(source: Union[str, IO[bytes], IO[str]], input_format: str, *, filename_hint: Optional[str] = None) -> dict:
-    """
-    Read and parse input from a text string or stream according to input_format.
-
-    - If input_format == 'auto': decide JSON vs text by peeking first non-whitespace char.
-      '{' or '[' -> JSON, else text.
-    - If JSON:
-        * If object matches our schema keys, validate and return as-is
-        * Else, normalize arbitrary JSON to our schema
-    - If text: parse as markdown/plain using the existing flow
-
-    The function is BOM-safe when reading from byte streams.
-    """
-    # Extract text from source
-    if isinstance(source, str):
-        text_content = source
-    else:
-        # Stream case: prefer bytes then decode; if str stream, read directly
-        raw = source.read()
-        if isinstance(raw, bytes):
-            text_content = raw.decode("utf-8-sig", errors="replace")
-        else:
-            text_content = raw
-
-    # Determine effective input format
-    effective_format = input_format
-    if input_format == "auto":
-        first_non_ws = next((ch for ch in text_content.lstrip()[:1]), "")
-        if first_non_ws in ("{", "["):
-            effective_format = "json"
-        else:
-            effective_format = "txt"
-
-    if effective_format in ("md", "txt"):
-        return _parse_text(text_content, filename_hint=filename_hint)
-
-    if effective_format == "json":
-        try:
-            data = json.loads(text_content)
-        except json.JSONDecodeError as exc:
-            raise exc
-
-        allowed_keys = set(SCHEMA["properties"].keys())
-        required_keys = set(["title", "timestamp", "raw_text", "plain_text"])
-
-        if isinstance(data, dict):
-            data_keys = set(data.keys())
-            # If object already matches schema keys and has required fields, validate and return
-            if data_keys.issubset(allowed_keys) and required_keys.issubset(data_keys):
-                validate_parsed(data)
-                return data
-
-            # Normalize arbitrary JSON object
-            title = str(data.get("title")) if "title" in data else (filename_hint or "stdin")
-            # Keep tags if present and is list of strings
-            tags_val = data.get("tags")
-            if isinstance(tags_val, list):
-                tags_norm = [str(t) for t in tags_val if isinstance(t, (str, int, float, bool))]
-                tags_norm = [t for t in tags_norm if isinstance(t, str)]
-            else:
-                tags_norm = []
-        else:
-            # Array or primitive: treat as arbitrary JSON
-            title = (filename_hint or "stdin")
-            tags_norm = []
-
-        # Minified raw/plain text representation of the original JSON
-        minified = json.dumps(json.loads(text_content), ensure_ascii=False, separators=(",", ":"))
         parsed = {
-            "title": title,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-            "raw_text": minified,
-            "plain_text": minified,
-            "tags": tags_norm,
-            "headers": [],
-            "reflections": [],
+            "title":       title,
+            "timestamp":   timestamp,
+            "raw_text":    raw_text,
+            "plain_text":  plain_text,
+            "tags":        tags,
+            "headers":     headers,
+            "date":        date_str,
+            "tone":        tone_str,
+            "summary":     summary_text.strip() if summary_text else None,
+            "reflections": reflections,
         }
-        validate_parsed(parsed)
-        return parsed
 
-    raise ValueError(f"Unsupported input_format: {input_format}")
+        # Remove None values and validate
+        parsed = {k: v for k, v in parsed.items() if v is not None}
+        
+        try:
+            validate_parsed(parsed)
+        except ParsingError:
+            # If validation fails, try to fix common issues
+            parsed = _fix_common_validation_issues(parsed)
+            validate_parsed(parsed)
+            
+        return parsed
+        
+    except Exception as e:
+        if isinstance(e, ParsingError):
+            raise
+        raise ParsingError(f"Failed to parse text: {str(e)}", error_type="parsing_error")
+
+
+def _fix_common_validation_issues(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Fix common validation issues in parsed data."""
+    fixed = data.copy()
+    
+    # Ensure required fields exist and are not None
+    if "title" not in fixed or not fixed["title"] or fixed["title"] is None:
+        fixed["title"] = "untitled"
+    
+    if "timestamp" not in fixed or fixed["timestamp"] is None:
+        fixed["timestamp"] = datetime.utcnow().isoformat() + "Z"
+    
+    if "raw_text" not in fixed or fixed["raw_text"] is None:
+        fixed["raw_text"] = ""
+    
+    if "plain_text" not in fixed or fixed["plain_text"] is None:
+        fixed["plain_text"] = ""
+    
+    # Ensure arrays are actually arrays
+    for field in ["tags", "headers", "reflections"]:
+        if field in fixed and not isinstance(fixed[field], list):
+            fixed[field] = []
+    
+    # Ensure strings are actually strings (not None)
+    for field in ["title", "timestamp", "raw_text", "plain_text", "date", "tone", "summary"]:
+        if field in fixed and fixed[field] is not None:
+            if not isinstance(fixed[field], str):
+                fixed[field] = str(fixed[field])
+        elif field in ["title", "timestamp", "raw_text", "plain_text"]:
+            # These are required fields, ensure they have default values
+            if field == "title":
+                fixed[field] = "untitled"
+            elif field == "timestamp":
+                fixed[field] = datetime.utcnow().isoformat() + "Z"
+            elif field in ["raw_text", "plain_text"]:
+                fixed[field] = ""
+    
+    return fixed
+
+
+def read_input(source, input_format: str, *, filename_hint: str | None = None) -> dict:
+    # 1) materialize text
+    if hasattr(source, "read"):
+        raw = source.read()
+        if isinstance(raw, str):
+            text = raw
+        else:
+            # Better: if bytes-like, pass to decode_bytes(raw)
+            text = decode_bytes(raw)
+    elif isinstance(source, (bytes, bytearray)):
+        text = decode_bytes(bytes(source))
+    else:
+        # path or text
+        if isinstance(source, str) and os.path.exists(source):
+            text = read_text_safely(source)
+        else:
+            text = str(source)
+
+    # 2) decide format
+    effective = input_format
+    if effective == "auto":
+        s = text.lstrip()
+        effective = "json" if s.startswith("{") or s.startswith("[") else "txt"
+
+    # 3) parse
+    if effective in ("md", "txt"):
+        return _parse_text(text, filename_hint=filename_hint)  # your existing path
+    if effective == "json":
+        try:
+            obj = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise ParsingError("Invalid JSON input. If this is Markdown or text, use `--input-format md|txt`.", error_type="json_decode_error") from e
+        return _normalize_from_json(obj, raw_text=text, filename_hint=filename_hint)
+
+    raise ValueError(f"Unsupported input format: {input_format}")
 
 
 def parse_file(md_path: Path) -> dict:
     """
     Parse a markdown file into structured JSON.
+    
+    Raises:
+        ParsingError: If parsing fails
     """
-    text = md_path.read_text(encoding="utf-8-sig", errors="replace")
-    return _parse_text(text, filename_hint=md_path.stem)
+    try:
+        text = read_text_safely(md_path)
+        return _parse_text(text, filename_hint=md_path.stem)
+    except Exception as e:
+        if isinstance(e, ParsingError):
+            raise
+        raise ParsingError(f"Failed to parse file {md_path}: {str(e)}", error_type="file_parsing_error")
 
 
 # Backward compatibility
