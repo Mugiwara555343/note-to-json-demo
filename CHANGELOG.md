@@ -6,7 +6,10 @@ All notable changes to this project will be documented in this file.
 - feat: CLI `--version` flag
 - chore: add pre-commit (black/ruff) and normalize LF line endings
 
+docs/quick-start
+=======
 
+main
 ## 0.2.2 — 2025-01-XX
 - feat(cli): add `--no-emoji` flag to disable emoji in status output
 - feat(encoding): automatic encoding detection for UTF-8, UTF-8 BOM, UTF-16 LE/BE

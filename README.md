@@ -25,21 +25,28 @@ Convert Markdown or text files to structured JSON, offline.
 pip install note-to-json
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
-```bash
-# Convert a single file
-note2json input.md
+Install in a virtual environment (Windows PowerShell shown):
+```powershell
+python -m venv vtest
+vtest\Scripts\activate
+pip install --upgrade pip
+pip install note-to-json
 
-# Convert multiple files
-note2json *.md
+Check version:
 
-# Output to STDOUT
-note2json input.md --stdout
+note2json --version
 
-# Pretty-print JSON
-note2json input.md --stdout --pretty
-```
+Convert a Markdown file to JSON:
+
+Set-Content note.md "# hello" -Encoding utf8
+note2json note.md --stdout --pretty
+
+Parse JSON inputs as well:
+
+Set-Content obj.json '{"note":"Already JSON"}' -Encoding utf8
+note2json obj.json --input-format json --stdout
 
 ## CLI Usage
 
