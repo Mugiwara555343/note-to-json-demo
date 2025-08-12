@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.3
+- feat: CLI `--version` flag
+- chore: add pre-commit (black/ruff) and normalize LF line endings
+
 ## 0.2.2 — 2025-01-XX
 - feat(cli): add `--no-emoji` flag to disable emoji in status output
 - feat(encoding): automatic encoding detection for UTF-8, UTF-8 BOM, UTF-16 LE/BE
