@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "note-to-json"
-version = "0.2.2"
+version = "0.2.3"
 description = "Convert Markdown or text files to structured JSON, offline."
 readme = "README.md"
 license = {text = "MIT"}
